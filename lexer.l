@@ -17,7 +17,6 @@ ID        [a-zA-Z_][a-zA-Z0-9_]
 
 %%
 "INT"           {return INT;}
-"WHILE"         {return WHILE;}
 "FOR"           {return FOR;}
 "IF"            {return IF;}
 "ELSE"          {return ELSE;}
