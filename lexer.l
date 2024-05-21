@@ -31,22 +31,25 @@ ID        [a-zA-Z_][a-zA-Z0-9_]
 "<"             {yylval.comp_type = LESS_COMP; return COMPARISON;}
 ">="            {yylval.comp_type = GREATER_EQUALS_COMP; return COMPARISON;}
 "<="            {yylval.comp_type = LESS_EQUALS_COMP; return COMPARISON;}
-"+"             {yylval.operation_type = ADD_OP; return OPERATION;}
-"-"             {yylval.operation_type = SUB_OP; return OPERATION;}
-"*"             {yylval.operation_type = MUL_OP; return OPERATION;}
-"/"             {yylval.operation_type = DIV_OP; return OPERATION;}
-"("             {return LB;}
-")"             {return RB;}
-"{"             {return LCB;}
-"}"             {return RCB;}
-";"             {return SEMICOLON;}
+"+" |
+"-" |
+"*" |
+"/" |
+"=" |
+"|" |
+"," |
+";" |
+"(" |
+")" |
+"{" |           
+"}"     { return yytext[0]; }
 "/*"            { BEGIN(C_COMMENT); }
 <C_COMMENT>"*/" { BEGIN(INITIAL); }
 <C_COMMENT>\n   { }
 <C_COMMENT>.    { }
 
-{ID}       { strcpy(yylval.name,yytext); return NAME; }
-{NUMBER}  { yylval.intVal = atoi(yytext); return NUMBER; }
+{ID}        { strcpy(yylval.name,yytext); return NAME; }
+{NUMBER}    { yylval.intVal = atoi(yytext); return NUMBER; }
 [ \t\n]+    ;
 .           {showError(yytext);}
 
