@@ -9,10 +9,10 @@
 void showError(char *token);
 #define YYERROR_VERBOSE 1
 %}
-%x C_COMMENT
+%x ML_COMMENT
 NUMBER    [-+]?[0-9]+
 //FLOATS      [+-]?([0-9]+[.][0-9]*|[.][0-9]+)
-ID        [a-zA-Z_][a-zA-Z0-9_]
+NAME        [a-zA-Z_][a-zA-Z0-9_]
 //STRING     \"([^\\\"]|\\.)*\"
 
 %%
@@ -25,12 +25,12 @@ ID        [a-zA-Z_][a-zA-Z0-9_]
 "OR"            {yylval.logOp = OR_OP; return OR;}
 "NOT"           {yylval.logOp = NOT_OP; return NOT;}
 "="             {return EQUALS;}
-"=="            {yylval.comp_type = EQUALS_COMP; return COMPARISON;}
-"!="            {yylval.comp_type = NOT_EQUALS_COMP; return COMPARISON;}
-">"             {yylval.comp_type = GREATER_COMP; return COMPARISON;}
-"<"             {yylval.comp_type = LESS_COMP; return COMPARISON;}
-">="            {yylval.comp_type = GREATER_EQUALS_COMP; return COMPARISON;}
-"<="            {yylval.comp_type = LESS_EQUALS_COMP; return COMPARISON;}
+">"             { yylval.fn = 1; return CMP; }
+"<"             { yylval.fn = 2; return CMP; }
+"<>"            { yylval.fn = 3; return CMP; }
+"=="            { yylval.fn = 4; return CMP; }
+">="            { yylval.fn = 5; return CMP; }
+"<="            { yylval.fn = 6; return CMP; }
 "+" |
 "-" |
 "*" |
@@ -42,16 +42,20 @@ ID        [a-zA-Z_][a-zA-Z0-9_]
 "(" |
 ")" |
 "{" |           
-"}"     { return yytext[0]; }
-"/*"            { BEGIN(C_COMMENT); }
-<C_COMMENT>"*/" { BEGIN(INITIAL); }
-<C_COMMENT>\n   { }
-<C_COMMENT>.    { }
+"}"             { return yytext[0]; }
 
-{ID}        { strcpy(yylval.name,yytext); return NAME; }
-{NUMBER}    { yylval.intVal = atoi(yytext); return NUMBER; }
-[ \t\n]+    ;
-.           {showError(yytext);}
+
+"//".*              { }
+"/*"		        { BEGIN(ML_COMMENT); }
+<ML_COMMENT>"*/"    { BEGIN(INITIAL); }
+<ML_COMMENT>[^*\n]+	{ }	
+<ML_COMMENT>"*"		{ }	
+<ML_COMMENT>"\n"	{ }
+
+{NAME}          { strcpy(yylval.name,yytext); return NAME; }
+{NUMBER}        { yylval.intVal = atoi(yytext); return NUMBER; }
+[ \t\n]+        ;
+.               {showError(yytext);}
 
 %%
 

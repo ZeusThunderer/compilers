@@ -33,7 +33,7 @@
 %right '='
 %left '+' '-'
 %left '*' '/'
-%nonassoc '|' UMINUS
+%nonassoc NOT UMINUS
 
 %type <a> exp stmt list explist
 %type <sl> symlist
@@ -41,11 +41,57 @@
 %start calclist
 
 %%
+program: 
+        statements
+;
 
-stmt: IF exp THEN list           { $$ = newflow('I', $2, $4, NULL); }
-   | IF exp THEN list ELSE list  { $$ = newflow('I', $2, $4, $6); }
-   | FOR exp DO list           { $$ = newflow('W', $2, $4, NULL); }
-   | exp
+statements:
+            statements statement | statement
+;
+
+statement:
+          if_statement 
+        | for_statement 
+        | assigment 
+        | declaration
+;
+
+declaration: 
+            INT NAME ';' 
+;
+
+assigment: 
+            NAME '=' exp ';' 
+;
+
+statements: 
+            statements statement 
+          | statement
+;
+
+tail:       
+            statement 
+      | '{' statements '}' 
+;
+
+if_statement:
+            IF '(' exp ')' tail
+            (ELSE IF '(' exp ')' tail)*
+            (ELSE tail)?
+;
+
+for_statement: 
+            FOR '(' exp ';' exp ';' exp ')' tail 
+;
+
+
+stmt:  decl                       { $$ = } 
+    |  IF exp THEN list           { $$ = newflow('I', $2, $4, NULL); }
+    |  IF exp THEN list ELSE list  { $$ = newflow('I', $2, $4, $6); }
+    |  FOR exp DO list           { $$ = newflow('W', $2, $4, NULL); }
+    |  exp
+;
+
 ;
 
 list: /* nothing */ { $$ = NULL; }
@@ -54,41 +100,40 @@ list: /* nothing */ { $$ = NULL; }
                       else
                         $$ = newast('L', $1, $3);
                     }
-   ;
+;
 
 exp: exp CMP exp          { $$ = newcmp($2, $1, $3); }
    | exp '+' exp          { $$ = newast('+', $1,$3); }
    | exp '-' exp          { $$ = newast('-', $1,$3);}
    | exp '*' exp          { $$ = newast('*', $1,$3); }
    | exp '/' exp          { $$ = newast('/', $1,$3); }
-   | '|' exp              { $$ = newast('|', $2, NULL); }
+   | exp AND exp          { $$ = newast('&', $1,$3); }
+   | exp OR exp           { $$ = newast('|', $1,$3); }
+   | NOT exp              { $$ = newast('!', $1,$3); }
    | '(' exp ')'          { $$ = $2; }
    | '-' exp %prec UMINUS { $$ = newast('M', $2, NULL); }
    | NUMBER               { $$ = newnum($1); }
-   | FUNC '(' explist ')' { $$ = newfunc($1, $3); }
    | NAME                 { $$ = newref($1); }
    | NAME '=' exp         { $$ = newasgn($1, $3); }
-   | NAME '(' explist ')' { $$ = newcall($1, $3); }
 ;
 
-explist: exp
- | exp ',' explist  { $$ = newast('L', $1, $3); }
+
 ;
 symlist: NAME       { $$ = newsymlist($1, NULL); }
  | NAME ',' symlist { $$ = newsymlist($1, $3); }
 ;
 
 calclist: /* nothing */
-  | calclist stmt EOL {
+  | calclist stmt ';' {
     if(debug) dumpast($2, 0);
      printf("= %4.4g\n> ", eval($2));
      treefree($2);
     }
-  | calclist LET NAME '(' symlist ')' '=' list EOL {
+  | calclist INT NAME '(' symlist ')' '=' list ';' {
                        dodef($3, $5, $8);
                        printf("Defined %s\n> ", $3->name); }
 
-  | calclist error EOL { yyerrok; printf("> "); }
+  | calclist error ';' { yyerrok; printf("> "); }
  ;
 %%
 
