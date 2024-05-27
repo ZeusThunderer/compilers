@@ -11,9 +11,7 @@
 /* symbol table */
 struct symbol {		/* a variable name */
   char *name;
-  double value;
-  struct ast *func;	/* stmt for the function */
-  struct symlist *syms; /* list of dummy args */
+  int value;
 };
 
 /* simple symtab of fixed size */
@@ -37,12 +35,11 @@ void symlistfree(struct symlist *sl);
  *  M unary minus
  *  L statement list
  *  I IF statement
+ *  E ELIF part 
  *  W WHILE statement
- *  N symbol ref
  *  = assignment
- *  S list of symbols
- *  F built in function call
- *  C user function call
+ *  D declaration
+ *  
  */ 
 
 enum bifs {			/* built-in functions */
@@ -61,23 +58,23 @@ struct ast {
   struct ast *r;
 };
 
-struct fncall {			/* built-in function */
-  int nodetype;			/* type F */
-  struct ast *l;
-  enum bifs functype;
-};
 
-struct ufncall {		/* user function */
-  int nodetype;			/* type C */
-  struct ast *l;		/* list of arguments */
-  struct symbol *s;
-};
-
-struct flow {
+struct ifast {
   int nodetype;			/* type I or W */
   struct ast *cond;		/* condition */
   struct ast *tl;		/* then or do list */
+  struct ast *elif;
   struct ast *el;		/* optional else list */
+};
+
+
+
+struct forast { 
+  int nodetype;
+  struct ast *init;
+  struct ast *cond;
+  struct ast *upd;
+  struct ast *tl;
 };
 
 struct numval {
@@ -104,7 +101,9 @@ struct ast *newcall(struct symbol *s, struct ast *l);
 struct ast *newref(struct symbol *s);
 struct ast *newasgn(struct symbol *s, struct ast *v);
 struct ast *newnum(double d);
-struct ast *newflow(int nodetype, struct ast *cond, struct ast *tl, struct ast *tr);
+struct ast *newif(struct ast *cond, struct ast *tl,struct ast *elif, struct ast *el);
+struct ast *newelif(struct ast *prev, struct ast *exp, struct ast *tail);
+struct ast *newfor(struct ast *init, struct ast *cond, struct ast *upd, struct ast* tl);
 
 /* define a function */
 void dodef(struct symbol *name, struct symlist *syms, struct ast *stmts);

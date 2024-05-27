@@ -39,8 +39,6 @@ lookup(char* sym)
     if(!sp->name) {		/* new entry */
       sp->name = strdup(sym);
       sp->value = 0;
-      sp->func = NULL;
-      sp->syms = NULL;
       return sp;
     }
 
@@ -98,36 +96,6 @@ newcmp(int cmptype, struct ast *l, struct ast *r)
 }
 
 struct ast *
-newfunc(int functype, struct ast *l)
-{
-  struct fncall *a = malloc(sizeof(struct fncall));
-  
-  if(!a) {
-    yyerror("out of space");
-    exit(0);
-  }
-  a->nodetype = 'F';
-  a->l = l;
-  a->functype = functype;
-  return (struct ast *)a;
-}
-
-struct ast *
-newcall(struct symbol *s, struct ast *l)
-{
-  struct ufncall *a = malloc(sizeof(struct ufncall));
-  
-  if(!a) {
-    yyerror("out of space");
-    exit(0);
-  }
-  a->nodetype = 'C';
-  a->l = l;
-  a->s = s;
-  return (struct ast *)a;
-}
-
-struct ast *
 newref(struct symbol *s)
 {
   struct symref *a = malloc(sizeof(struct symref));
@@ -157,21 +125,45 @@ newasgn(struct symbol *s, struct ast *v)
 }
 
 struct ast *
-newflow(int nodetype, struct ast *cond, struct ast *tl, struct ast *el)
+newif(struct ast *cond, struct ast *tl,struct ast *elif, struct ast *el)
 {
-  struct flow *a = malloc(sizeof(struct flow));
+  struct ifast *a = malloc(sizeof(struct ifast));
   
   if(!a) {
     yyerror("out of space");
     exit(0);
   }
-  a->nodetype = nodetype;
+  a->nodetype = 'I';
   a->cond = cond;
   a->tl = tl;
+  a->elif = elif;
   a->el = el;
   return (struct ast *)a;
 }
 
+struct ast * 
+newelif(struct ast *prev, struct ast *exp, struct ast *tail)
+{
+    struct ast *next = newast('E', exp, tail);
+    return newast('C', prev, next);
+}
+
+
+struct ast * 
+newfor(struct ast *init, struct ast *cond, struct ast *upd, struct ast* tl){
+    struct forast *a = malloc(sizeof(struct forast));
+  
+    if(!a) {
+      yyerror("out of space");
+      exit(0);
+    }
+    a->nodetype = 'F';
+    a->init = init;
+    a->cond = cond;
+    a->upd = upd;
+    a->tl = tl;
+    return (struct ast *)a;
+}
 struct symlist *
 newsymlist(struct symbol *sym, struct symlist *next)
 {
@@ -202,14 +194,8 @@ symlistfree(struct symlist *sl)
 void
 dodef(struct symbol *name, struct symlist *syms, struct ast *func)
 {
-  if(name->syms) symlistfree(name->syms);
-  if(name->func) treefree(name->func);
-  name->syms = syms;
-  name->func = func;
-}
 
-static double callbuiltin(struct fncall *);
-static double calluser(struct ufncall *);
+}
 
 double
 eval(struct ast *a)
@@ -284,102 +270,6 @@ eval(struct ast *a)
   return v;
 }
 
-static double
-callbuiltin(struct fncall *f)
-{
-  enum bifs functype = f->functype;
-  double v = eval(f->l);
-
- switch(functype) {
- case B_sqrt:
-   return sqrt(v);
- case B_exp:
-   return exp(v);
- case B_log:
-   return log(v);
- case B_print:
-   printf("= %4.4g\n", v);
-   return v;
- default:
-   yyerror("Unknown built-in function %d", functype);
-   return 0.0;
- }
-}
-
-static double
-calluser(struct ufncall *f)
-{
-  struct symbol *fn = f->s;	/* function name */
-  struct symlist *sl;		/* dummy arguments */
-  struct ast *args = f->l;	/* actual arguments */
-  double *oldval, *newval;	/* saved arg values */
-  double v;
-  int nargs;
-  int i;
-
-  if(!fn->func) {
-    yyerror("call to undefined function", fn->name);
-    return 0;
-  }
-
-  /* count the arguments */
-  sl = fn->syms;
-  for(nargs = 0; sl; sl = sl->next)
-    nargs++;
-
-  /* prepare to save them */
-  oldval = (double *)malloc(nargs * sizeof(double));
-  newval = (double *)malloc(nargs * sizeof(double));
-  if(!oldval || !newval) {
-    yyerror("Out of space in %s", fn->name); return 0.0;
-  }
-  
-  /* evaluate the arguments */
-  for(i = 0; i < nargs; i++) {
-    if(!args) {
-      yyerror("too few args in call to %s", fn->name);
-      free(oldval); free(newval);
-      return 0;
-    }
-
-    if(args->nodetype == 'L') {	/* if this is a list node */
-      newval[i] = eval(args->l);
-      args = args->r;
-    } else {			/* if it's the end of the list */
-      newval[i] = eval(args);
-      args = NULL;
-    }
-  }
-		     
-  /* save old values of dummies, assign new ones */
-  sl = fn->syms;
-  for(i = 0; i < nargs; i++) {
-    struct symbol *s = sl->sym;
-
-    oldval[i] = s->value;
-    s->value = newval[i];
-    sl = sl->next;
-  }
-
-  free(newval);
-
-  /* evaluate the function */
-  v = eval(fn->func);
-
-  /* put the dummies back */
-  sl = fn->syms;
-  for(i = 0; i < nargs; i++) {
-    struct symbol *s = sl->sym;
-
-    s->value = oldval[i];
-    sl = sl->next;
-  }
-
-  free(oldval);
-  return v;
-}
-
-
 void
 treefree(struct ast *a)
 {
@@ -408,9 +298,6 @@ treefree(struct ast *a)
     break;
 
   case 'I': case 'W':
-    free( ((struct flow *)a)->cond);
-    if( ((struct flow *)a)->tl) free( ((struct flow *)a)->tl);
-    if( ((struct flow *)a)->el) free( ((struct flow *)a)->el);
     break;
 
   default: printf("internal error: free bad node %c\n", a->nodetype);
@@ -479,20 +366,14 @@ dumpast(struct ast *a, int level)
 
   case 'I': case 'W':
     printf("flow %c\n", a->nodetype);
-    dumpast( ((struct flow *)a)->cond, level);
-    if( ((struct flow *)a)->tl)
-      dumpast( ((struct flow *)a)->tl, level);
-    if( ((struct flow *)a)->el)
-      dumpast( ((struct flow *)a)->el, level);
+
     return;
 	              
   case 'F':
-    printf("builtin %d\n", ((struct fncall *)a)->functype);
-    dumpast(a->l, level);
     return;
 
-  case 'C': printf("call %s\n", ((struct ufncall *)a)->s->name);
-    dumpast(a->l, level);
+  case 'C': 
+
     return;
 
   default: printf("bad %c\n", a->nodetype);
