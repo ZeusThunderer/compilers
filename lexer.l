@@ -1,6 +1,6 @@
 %option noyywrap yylineno
 %{
-#include "fb3-2.h"
+#include "fb3.h"
 #include "parser.tab.h"
 void showError(char *token);
 #define YYERROR_VERBOSE 1

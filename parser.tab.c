@@ -71,9 +71,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "fb3-2.h"
-extern int yylex(void);
-extern int yylineno;
+#include "fb3.h"
+int yylex(void);
+void yyerror(const char *s);
 
 #line 79 "parser.tab.c"
 
@@ -1494,3 +1494,6 @@ yyreturnlab:
 
 #line 114 "parser.y"
 
+void yyerror (const char *s) {
+   fprintf (stderr, "%s\n", s);
+}

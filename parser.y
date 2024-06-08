@@ -9,9 +9,9 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "fb3-2.h"
-extern int yylex(void);
-extern int yylineno;
+#include "fb3.h"
+int yylex(void);
+void yyerror(const char *s);
 %}
 
 %union {
@@ -35,7 +35,7 @@ extern int yylineno;
 %left '*' '/'
 %nonassoc NOT UMINUS
 
-%type <a>program exp statement statements if_statement for_statement while_statement assigment declaration tail else_if_part else_part 
+%type <a> program exp statement statements if_statement for_statement while_statement assigment declaration tail else_if_part else_part 
 
 %start program
 
@@ -112,3 +112,6 @@ for_statement:
 
 
 %%
+void yyerror (const char *s) {
+   fprintf (stderr, "%s\n", s);
+}

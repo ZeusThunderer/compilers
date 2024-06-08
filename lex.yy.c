@@ -511,7 +511,7 @@ int yy_flex_debug = 0;
 char *yytext;
 #line 1 "lexer.l"
 #line 3 "lexer.l"
-#include "fb3-2.h"
+#include "fb3.h"
 #include "parser.tab.h"
 void showError(char *token);
 #define YYERROR_VERBOSE 1
