@@ -1,3 +1,7 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/settings.json
+lex.yy.c
+parser.tab.h
+ast-maker
+parser.tab.c

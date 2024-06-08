@@ -113,5 +113,5 @@ for_statement:
 
 %%
 void yyerror (const char *s) {
-   fprintf (stderr, "%s\n", s);
+   fprintf (stderr, "error in: %s\n", s);
 }

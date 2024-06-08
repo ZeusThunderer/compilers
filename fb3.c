@@ -12,7 +12,7 @@
 #  include <stdarg.h>
 #  include <string.h>
 #  include <math.h>
-#  include "fb3-2.h"
+#  include "fb3.h"
 
 /* symbol table */
 /* hash a symbol */
@@ -26,9 +26,8 @@ symhash(char *sym)
 
   return hash;
 }
-
-struct symbol *
-lookup(char* sym)
+struct symbol symtab[NHASH];
+struct symbol *lookup(char* sym)
 {
   struct symbol *sp = &symtab[symhash(sym)%NHASH];
   int scount = NHASH;		/* how many have we looked at */
@@ -44,15 +43,13 @@ lookup(char* sym)
 
     if(++sp >= symtab+NHASH) sp = symtab; /* try the next entry */
   }
-  yyerror("symbol table overflow\n");
   abort(); /* tried them all, table is full */
 
 }
 
 
 
-struct ast *
-newast(int nodetype, struct ast *l, struct ast *r)
+struct ast *newast(int nodetype, struct ast *l, struct ast *r)
 {
   struct ast *a = malloc(sizeof(struct ast));
   
@@ -66,8 +63,7 @@ newast(int nodetype, struct ast *l, struct ast *r)
   return a;
 }
 
-struct ast *
-newnum(double d)
+struct ast *newnum(double d)
 {
   struct numval *a = malloc(sizeof(struct numval));
   
@@ -80,8 +76,7 @@ newnum(double d)
   return (struct ast *)a;
 }
 
-struct ast *
-newcmp(int cmptype, struct ast *l, struct ast *r)
+struct ast *newcmp(int cmptype, struct ast *l, struct ast *r)
 {
   struct ast *a = malloc(sizeof(struct ast));
   
@@ -164,32 +159,6 @@ newfor(struct ast *init, struct ast *cond, struct ast *upd, struct ast* tl){
     a->tl = tl;
     return (struct ast *)a;
 }
-struct symlist *
-newsymlist(struct symbol *sym, struct symlist *next)
-{
-  struct symlist *sl = malloc(sizeof(struct symlist));
-  
-  if(!sl) {
-    yyerror("out of space");
-    exit(0);
-  }
-  sl->sym = sym;
-  sl->next = next;
-  return sl;
-}
-
-void
-symlistfree(struct symlist *sl)
-{
-  struct symlist *nsl;
-
-  while(sl) {
-    nsl = sl->next;
-    free(sl);
-    sl = nsl;
-  }
-}
-
 /* define a function */
 void
 dodef(struct symbol *name, struct symlist *syms, struct ast *func)
@@ -259,11 +228,11 @@ eval(struct ast *a)
     }*/
     break;			/* last value is value */
 	              
-  case 'L': eval(a->l); v = eval(a->r); break;
+  case 'L':  break;
 
-  case 'F': v = callbuiltin((struct fncall *)a); break;
+  case 'F':  break;
 
-  case 'C': v = calluser((struct ufncall *)a); break;
+  case 'C':  break;
 
   default: printf("internal error: bad node %c\n", a->nodetype);
   }
@@ -307,16 +276,6 @@ treefree(struct ast *a)
 
 }
 
-void
-yyerror(char *s, ...)
-{
-  va_list ap;
-  va_start(ap, s);
-
-  fprintf(stderr, "%d: error: ", yylineno);
-  vfprintf(stderr, s, ap);
-  fprintf(stderr, "\n");
-}
 
 int
 main()

@@ -82,6 +82,6 @@ struct ast *newnum(double d);
 struct ast *newif(struct ast *cond, struct ast *tl,struct ast *elif, struct ast *el);
 struct ast *newelif(struct ast *prev, struct ast *exp, struct ast *tail);
 struct ast *newfor(struct ast *init, struct ast *cond, struct ast *upd, struct ast* tl);
-
+struct ast *newcmp(int cmptype, struct ast *l, struct ast *r);
 
 #endif
