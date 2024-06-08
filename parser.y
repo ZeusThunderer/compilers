@@ -7,9 +7,11 @@
 /* calculator with AST */
 
 %{
-#  include <stdio.h>
-#  include <stdlib.h>
-#  include "fb3-2.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "fb3-2.h"
+extern int yylex(void);
+extern int yylineno;
 %}
 
 %union {
@@ -23,10 +25,8 @@
 /* declare tokens */
 %token <intVal> NUMBER
 %token <s> NAME
-%token <fn> FUNC
-%token <fn> CMP 
 
-%token IF ELSE FOR INT AND OR NOT 
+%token IF ELSE FOR INT AND OR NOT WHILE
 
 
 %nonassoc <fn> CMP
@@ -36,9 +36,8 @@
 %nonassoc NOT UMINUS
 
 %type <a>program exp statement statements if_statement for_statement while_statement assigment declaration tail else_if_part else_part 
-%type <sl> symlist
 
-%start calclist
+%start program
 
 %%
 program: 
@@ -65,7 +64,7 @@ exp: exp CMP exp          { $$ = newcmp($2, $1, $3); }
    | exp '/' exp          { $$ = newast('/', $1,$3); }
    | exp AND exp          { $$ = newast('&', $1,$3); }
    | exp OR exp           { $$ = newast('|', $1,$3); }
-   | NOT exp              { $$ = newast('!', $1,$3); }
+   | NOT exp              { $$ = newast('!', $2,NULL); }
    | '(' exp ')'          { $$ = $2; }
    | '-' exp %prec UMINUS { $$ = newast('M', $2, NULL); }
    | NUMBER               { $$ = newnum($1); }
@@ -89,26 +88,27 @@ tail:
 ;
 
 if_statement: 
-            IF '(' exp ')' tail else_if_part else_part  {$$ = newif($3,$5, $6, $7)} 
+            IF '(' exp ')' tail else_if_part else_part  {$$ = newif($3,$5, $6, $7); } 
 ;
 
 else_if_part: 
             else_if_part ELSE IF '(' exp ')' tail       { $$ = newelif($1, $5, $7); }
           | ELSE IF '(' exp ')' tail                    { $$ = newast('E', $4, $6); }
-          | 
+          | %empty
 ;
 
 else_part: 
             ELSE tail         { $$ = $2; }
-          |  
+          | %empty
 ; 
 
 while_statement:
             WHILE '(' exp ')' tail             { $$ = newast('W', $3, $5); }
 
 for_statement: 
-            FOR '(' declaration exp ';' exp ')' tail  { $$ = newfor($3, $4, $6, $8) }
+            FOR '(' declaration exp ';' exp ')' tail  { $$ = newfor($3, $4, $6, $8); }
 ;
 
-%%
 
+
+%%

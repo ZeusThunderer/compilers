@@ -1,7 +1,7 @@
-%option noyywrap nodefault yylineno
+%option noyywrap yylineno
 %{
-# include "fb3-2.h"
-# include "fb3-2.tab.h"
+#include "fb3-2.h"
+#include "parser.tab.h"
 void showError(char *token);
 #define YYERROR_VERBOSE 1
 %}
@@ -15,9 +15,9 @@ NAME        [a-zA-Z_][a-zA-Z0-9_]
 "while"         {return WHILE; }
 "if"            {return IF;}
 "else"          {return ELSE;}
-"and"           {yylval.logOp = AND_OP; return AND;}
-"or"            {yylval.logOp = OR_OP; return OR;}
-"not"           {yylval.logOp = NOT_OP; return NOT;}
+"and"           {return AND;}
+"or"            {return OR;}
+"not"           {return NOT;}
 ">"             { yylval.fn = 1; return CMP; }
 "<"             { yylval.fn = 2; return CMP; }
 "!="            { yylval.fn = 3; return CMP; }

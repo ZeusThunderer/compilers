@@ -1,3 +1,8 @@
+#ifndef TEST
+#define TEST
+
+
+
 /* Companion source code for "flex & bison", published by O'Reilly
  * Media, ISBN 978-0-596-15597-1
  * Copyright (c) 2009, Taughannock Networks. All rights reserved.
@@ -16,7 +21,7 @@ struct symbol {		/* a variable name */
 
 /* simple symtab of fixed size */
 #define NHASH 9997
-struct symbol symtab[NHASH];
+extern struct symbol symtab[NHASH];
 
 struct symbol *lookup(char*);
 
@@ -95,9 +100,6 @@ struct symasgn {
 
 /* build an AST */
 struct ast *newast(int nodetype, struct ast *l, struct ast *r);
-struct ast *newcmp(int cmptype, struct ast *l, struct ast *r);
-struct ast *newfunc(int functype, struct ast *l);
-struct ast *newcall(struct symbol *s, struct ast *l);
 struct ast *newref(struct symbol *s);
 struct ast *newasgn(struct symbol *s, struct ast *v);
 struct ast *newnum(double d);
@@ -121,3 +123,4 @@ void yyerror(char *s, ...);
 extern int debug;
 void dumpast(struct ast *a, int level);
 
+#endif

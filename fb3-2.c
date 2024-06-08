@@ -237,26 +237,26 @@ eval(struct ast *a)
   /* control flow */
   /* null if/else/do expressions allowed in the grammar, so check for them */
   case 'I': 
-    if( eval( ((struct flow *)a)->cond) != 0) {
+    /*if( eval( ((struct flow *)a)->cond) != 0) {
       if( ((struct flow *)a)->tl) {
 	v = eval( ((struct flow *)a)->tl);
       } else
-	v = 0.0;		/* a default value */
+	v = 0.0;		/* a default value 
     } else {
       if( ((struct flow *)a)->el) {
         v = eval(((struct flow *)a)->el);
       } else
-	v = 0.0;		/* a default value */
-    }
+	v = 0.0;		/* a default value 
+    }*/
     break;
 
   case 'W':
-    v = 0.0;		/* a default value */
+    /*v = 0.0;		/* a default value 
     
     if( ((struct flow *)a)->tl) {
       while( eval(((struct flow *)a)->cond) != 0)
 	v = eval(((struct flow *)a)->tl);
-    }
+    }*/
     break;			/* last value is value */
 	              
   case 'L': eval(a->l); v = eval(a->r); break;
