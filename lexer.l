@@ -1,57 +1,76 @@
-%option noyywrap yylineno
 %{
-#include "fb3.h"
+#include "ast.h"
+#include <stdio.h>
 #include "parser.tab.h"
-void showError(char *token);
-#define YYERROR_VERBOSE 1
 %}
-%x ML_COMMENT
-NUMBER    [-+]?[0-9]+
-NAME        [a-zA-Z_][a-zA-Z0-9_]
+
+%option noyywrap
+
+%x COMMENT
 
 %%
-"int"           {return INT;}
-"for"           {return FOR;}
-"while"         {return WHILE; }
-"if"            {return IF;}
-"else"          {return ELSE;}
-"and"           {return AND;}
-"or"            {return OR;}
-"not"           {return NOT;}
-">"             { yylval.fn = 1; return CMP; }
-"<"             { yylval.fn = 2; return CMP; }
-"!="            { yylval.fn = 3; return CMP; }
-"=="            { yylval.fn = 4; return CMP; }
-">="            { yylval.fn = 5; return CMP; }
-"<="            { yylval.fn = 6; return CMP; }
+
+[0-9][a-zA-Z][a-zA-Z0-9]* { yyerror("Names cannot start with a digit");}
+[0-9]+          { yylval.i = atoi(yytext); return NUMBER; }
+
+
+    /* tokens for arithmetic and logical operators. */
+
+    /* single character ops */
 "+" |
 "-" |
 "*" |
-"/" |
-"=" |
-"|" |
-"," |
-";" |
-"(" |
+"/" | 
+"=" |  
+"," | 
+";" | 
+"(" | 
 ")" |
-"{" |           
-"}"             { return yytext[0]; }
+"{" |
+"}"           { return yytext[0]; }
+
+    /* comparation ops, all are a CMP token */
+">"                 { yylval.cmp = 1; return CMP; }
+"<"                 { yylval.cmp = 2; return CMP; }
+"!="                { yylval.cmp = 3; return CMP; }
+"=="                { yylval.cmp = 4; return CMP; }
+">="                { yylval.cmp = 5; return CMP; }
+"<="                { yylval.cmp = 6; return CMP; }
+
+    /* keywords */
+"if"                { return IF;     }
+"else"              { return ELSE;   }
+"while"             { return WHILE;  }
+"for"               { return FOR;    }
+"elif"              { return ELIF;   }
+
+"and"               { return AND;   }
+"or"                { return OR;    }
+"not"               { return NOT;   }
 
 
-"//".*              { }
-"/*"		        { BEGIN(ML_COMMENT); }
-<ML_COMMENT>"*/"    { BEGIN(INITIAL); }
-<ML_COMMENT>[^*\n]+	{ }	
-<ML_COMMENT>"*"		{ }	
-<ML_COMMENT>"\n"	{ }
+    /* booleans */
+"true"              { yylval.i = 1; return NUMBER; }
+"false"             { yylval.i = 0; return NUMBER;  }
 
-{NAME}          { yylval.s = lookup(yytext); return NAME; }
-{NUMBER}        { yylval.intVal = atoi(yytext); return NUMBER; }
-[ \t\n]+        ;
-.               {showError(yytext);}
+     /* comments */
+
+"/*"                { BEGIN(COMMENT); }
+<COMMENT>"*/"       { BEGIN(INITIAL); }
+<COMMENT>.          { }
+<COMMENT>\n         { }
+<COMMENT><<EOF>>    { yyerror("Unterminated comment"); }
+
+"//".*              /* single line comment */
+
+    /* names */
+[a-zA-Z][a-zA-Z0-9]*    { yylval.s = strdup(yytext); return NAME; }
+
+
+[ \t]+                  { /* ignore whitespace */ }
+\\\n                    {printf("c> "); }  /* ignore line continuation */
+\n                      {  }
+
+.                       { printf("Unexpected character: %c\n", yytext[0]); }
 
 %%
-
-void showError(char* token) {
-    printf("Unknown token: %s\n", token);
-}
